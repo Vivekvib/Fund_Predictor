@@ -83,7 +83,7 @@ python stock_universe_checker.py
 
 Open fund_overlap_dashboard.html using a local server (e.g., VS Code "Live Server" extension) to explore the interactive visualizations.
 
-Open this url to see the Dashboard: https://fund-predictor-git-main-vivek-nishads-projects.vercel.app/
+Open this url to see the Dashboard: [https://fund-predictor-git-main-vivek-nishads-projects.vercel.app/](http://fund-predictor.vercel.app/)
 
 📈 Future Scope
 
