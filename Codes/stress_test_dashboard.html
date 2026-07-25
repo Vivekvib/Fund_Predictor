@@ -6,6 +6,7 @@
     <title>Liquidity Stress Test Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -16,12 +17,13 @@
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen p-4 md:p-8">
+<body class="bg-slate-50 min-h-screen p-4 md:p-6 lg:p-8">
 
-    <div class="max-w-7xl mx-auto space-y-6">
+    <!-- CHANGED: Expanded max-width for a true dashboard feel -->
+    <div class="max-w-[1500px] w-full mx-auto space-y-6">
         
         <!-- Header -->
-        <header class="bg-white rounded-3xl shadow-sm p-8 border border-slate-200">
+        <header class="bg-white rounded-3xl shadow-sm p-6 lg:p-8 border border-slate-200">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
                     <h1 class="text-3xl font-black text-slate-900 tracking-tight">Liquidity Stress Test Engine</h1>
@@ -29,94 +31,124 @@
                         Simulate a macroeconomic shock. Adjust the fund parameters below to calculate the <strong class="text-indigo-600">Days to Liquidate (DTL)</strong> and estimated <strong class="text-rose-600">Price Impact</strong> for the most crowded trades in your universe.
                     </p>
                 </div>
-                <a href="fund_overlap_dashboard.html" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-xl font-bold text-sm transition-colors border border-slate-200">
+                <a href="fund_overlap_dashboard.html" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-xl font-bold text-sm transition-colors border border-slate-200 whitespace-nowrap">
                     ← Back to Overlap Map
                 </a>
             </div>
         </header>
 
-        <!-- Scenario Controls -->
-        <div class="bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 rounded-3xl shadow-xl p-8 border border-indigo-800 text-white">
-            <h2 class="text-xs font-black uppercase tracking-widest text-indigo-300 mb-6">Scenario Parameters</h2>
+        <!-- NEW: Grid Layout (Sidebar + Main Content) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- AUM Slider -->
-                <div>
-                    <label class="flex justify-between text-sm font-bold text-slate-200 mb-3">
-                        <span>Hypothetical Fund AUM</span>
-                        <span id="aumVal" class="bg-indigo-950/50 text-indigo-200 px-3 py-1 rounded-lg text-xs border border-indigo-700/50">₹5,000 Cr</span>
-                    </label>
-                    <input type="range" id="aumSlider" min="500" max="25000" step="500" value="5000" class="w-full h-2 bg-indigo-950 rounded-lg appearance-none cursor-pointer accent-indigo-400">
-                </div>
-
-                <!-- Allocation Slider -->
-                <div>
-                    <label class="flex justify-between text-sm font-bold text-slate-200 mb-3">
-                        <span>Allocation per Stock</span>
-                        <span id="allocVal" class="bg-indigo-950/50 text-indigo-200 px-3 py-1 rounded-lg text-xs border border-indigo-700/50">4.0%</span>
-                    </label>
-                    <input type="range" id="allocSlider" min="0.5" max="10.0" step="0.5" value="4.0" class="w-full h-2 bg-indigo-950 rounded-lg appearance-none cursor-pointer accent-indigo-400">
-                </div>
-
-                <!-- Shock Slider -->
-                <div>
-                    <label class="flex justify-between text-sm font-bold text-rose-200 mb-3">
-                        <span class="text-rose-400">Redemption Shock (Sell-off)</span>
-                        <span id="shockVal" class="bg-rose-950/50 text-rose-300 px-3 py-1 rounded-lg text-xs border border-rose-800/50">20%</span>
-                    </label>
-                    <input type="range" id="shockSlider" min="5" max="100" step="5" value="20" class="w-full h-2 bg-rose-950 rounded-lg appearance-none cursor-pointer accent-rose-500">
-                </div>
-            </div>
-            
-            <div class="mt-6 p-4 bg-indigo-950/40 rounded-xl border border-indigo-800/50 flex items-center gap-3">
-                <span class="text-xl">⚖️</span>
-                <p class="text-xs text-indigo-200/80 leading-relaxed">
-                    <strong>Assumption:</strong> To avoid crashing the market, the fund cannot account for more than <strong>20% of the Daily Trading Volume</strong> on any given day during liquidation.
-                </p>
-            </div>
-        </div>
-
-        <!-- Results Table -->
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-            <!-- Table Header & Controls -->
-            <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50/50">
-                <h2 class="text-lg font-bold text-slate-800">Risk Assessment Report</h2>
-                
-                <!-- NEW: Search and Filter Controls -->
-                <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                    <input type="text" id="searchInput" placeholder="Search company..." class="px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all w-full sm:w-64">
+            <!-- LEFT PANEL: Sticky Scenario Controls -->
+            <div class="lg:col-span-3 xl:col-span-3 lg:sticky lg:top-8 flex flex-col gap-6 z-20">
+                <div class="bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 rounded-3xl shadow-xl p-6 lg:p-8 border border-indigo-800 text-white">
+                    <h2 class="text-xs font-black uppercase tracking-widest text-indigo-300 mb-8">Scenario Parameters</h2>
                     
-                    <select id="riskFilter" class="px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white cursor-pointer transition-all">
-                        <option value="All">All Risk Levels</option>
-                        <option value="High">🔴 High Risk (>7 Days)</option>
-                        <option value="Moderate">🟡 Moderate Risk (3-7 Days)</option>
-                        <option value="Low">🟢 Low Risk (<3 Days)</option>
-                    </select>
+                    <!-- CHANGED: Stacked sliders vertically for the sidebar -->
+                    <div class="flex flex-col gap-8">
+                        <!-- AUM Slider -->
+                        <div>
+                            <label class="flex justify-between items-center text-sm font-bold text-slate-200 mb-3">
+                                <span>Hypothetical Fund AUM</span>
+                                <span id="aumVal" class="bg-indigo-950/50 text-indigo-200 px-3 py-1.5 rounded-lg text-xs border border-indigo-700/50 shadow-inner">₹5,000 Cr</span>
+                            </label>
+                            <input type="range" id="aumSlider" min="500" max="25000" step="500" value="5000" class="w-full h-2 bg-indigo-950 rounded-lg appearance-none cursor-pointer accent-indigo-400">
+                        </div>
+
+                        <!-- Allocation Slider -->
+                        <div>
+                            <label class="flex justify-between items-center text-sm font-bold text-slate-200 mb-3">
+                                <span>Allocation per Stock</span>
+                                <span id="allocVal" class="bg-indigo-950/50 text-indigo-200 px-3 py-1.5 rounded-lg text-xs border border-indigo-700/50 shadow-inner">4.0%</span>
+                            </label>
+                            <input type="range" id="allocSlider" min="0.5" max="10.0" step="0.5" value="4.0" class="w-full h-2 bg-indigo-950 rounded-lg appearance-none cursor-pointer accent-indigo-400">
+                        </div>
+
+                        <!-- Shock Slider -->
+                        <div>
+                            <label class="flex justify-between items-center text-sm font-bold text-rose-200 mb-3">
+                                <span class="text-rose-400">Redemption Shock</span>
+                                <span id="shockVal" class="bg-rose-950/50 text-rose-300 px-3 py-1.5 rounded-lg text-xs border border-rose-800/50 shadow-inner font-black">20%</span>
+                            </label>
+                            <input type="range" id="shockSlider" min="5" max="100" step="5" value="20" class="w-full h-2 bg-rose-950 rounded-lg appearance-none cursor-pointer accent-rose-500">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 p-4 bg-indigo-950/50 rounded-2xl border border-indigo-800/50 flex items-start gap-4 shadow-inner">
+                        <span class="text-2xl opacity-80 mt-1">⚖️</span>
+                        <p class="text-xs text-indigo-200/90 leading-relaxed font-medium">
+                            <strong>Assumption:</strong> To avoid crashing the market, the fund cannot account for more than <strong>20% of the Daily Trading Volume</strong> on any given day.
+                        </p>
+                    </div>
                 </div>
             </div>
-            
-            <div class="overflow-x-auto max-h-[600px]">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
-                        <tr>
-                            <!-- NEW: Clickable Sort Headers -->
-                            <th onclick="handleSort('name')" class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 cursor-pointer hover:bg-slate-100 hover:text-indigo-600 transition-colors group">Company Name <span id="sort-name" class="ml-1 text-indigo-400"></span></th>
-                            <th onclick="handleSort('funds')" class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 cursor-pointer hover:bg-slate-100 hover:text-indigo-600 transition-colors group">Funds Holding <span id="sort-funds" class="ml-1 text-indigo-400"></span></th>
-                            <th onclick="handleSort('price')" class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right cursor-pointer hover:bg-slate-100 hover:text-indigo-600 transition-colors group">Current Price <span id="sort-price" class="ml-1 text-indigo-400"></span></th>
-                            <th onclick="handleSort('adv')" class="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right cursor-pointer hover:bg-slate-100 hover:text-indigo-600 transition-colors group">90-Day ADV <span id="sort-adv" class="ml-1 text-indigo-400"></span></th>
-                            <th onclick="handleSort('shockShares')" class="p-4 text-xs font-bold text-indigo-600 uppercase tracking-wider border-b border-indigo-100 text-right bg-indigo-50/30 cursor-pointer hover:bg-indigo-50 hover:text-indigo-800 transition-colors group">Shock Shares <span id="sort-shockShares" class="ml-1 text-indigo-500"></span></th>
-                            <th onclick="handleSort('dtl')" class="p-4 text-xs font-black text-rose-600 uppercase tracking-wider border-b border-rose-100 text-right bg-rose-50/30 cursor-pointer hover:bg-rose-50 hover:text-rose-800 transition-colors group">Days to Liquidate <span id="sort-dtl" class="ml-1 text-rose-500">↓</span></th>
-                            <th onclick="handleSort('impact')" class="p-4 text-xs font-black text-rose-600 uppercase tracking-wider border-b border-rose-100 text-right bg-rose-50/30 cursor-pointer hover:bg-rose-50 hover:text-rose-800 transition-colors group">Est. Price Impact <span id="sort-impact" class="ml-1 text-rose-500"></span></th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-100">
-                        <!-- Rows injected via JS -->
-                        <tr><td colspan="7" class="p-8 text-center text-slate-400 font-medium">Loading quantitative metrics...</td></tr>
-                    </tbody>
-                </table>
+
+            <!-- RIGHT PANEL: Chart and Table -->
+            <div class="lg:col-span-9 xl:col-span-9 flex flex-col gap-6">
+                
+                <!-- Top 10 Risk Chart -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 lg:p-8">
+                    <h2 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                        <span class="w-2 h-6 bg-rose-500 rounded-full inline-block"></span>
+                        Top 10 Most Vulnerable Stocks (Liquidation Time)
+                    </h2>
+                    <!-- CHANGED: Controlled height for better sidebar alignment -->
+                    <div class="relative h-[280px] w-full">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Results Table -->
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                    <!-- Table Header & Controls -->
+                    <div class="p-6 lg:px-8 lg:py-6 border-b border-slate-100 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-slate-50/50">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <span class="w-2 h-6 bg-indigo-500 rounded-full inline-block"></span>
+                            Risk Assessment Report
+                        </h2>
+                        
+                        <!-- Search and Filter Controls -->
+                        <div class="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+                            <div class="relative w-full sm:w-72">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+                                <input type="text" id="searchInput" list="companyList" placeholder="Search company..." class="pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all w-full shadow-sm">
+                            </div>
+                            <datalist id="companyList"></datalist>
+                            
+                            <select id="riskFilter" class="px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white cursor-pointer transition-all shadow-sm text-slate-700">
+                                <option value="All">🌍 All Risk Levels</option>
+                                <option value="High">🔴 High Risk (>7 Days)</option>
+                                <option value="Moderate">🟡 Moderate Risk (3-7 Days)</option>
+                                <option value="Low">🟢 Low Risk (<3 Days)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- CHANGED: Taller max-height, keeping scroll inside the card. Removed global whitespace-nowrap to let long company names wrap -->
+                    <div class="overflow-x-auto overflow-y-auto max-h-[600px] bg-white">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50/90 sticky top-0 z-10 shadow-sm backdrop-blur-sm">
+                                <tr>
+                                    <th onclick="handleSort('name')" class="p-3 pl-6 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 cursor-pointer hover:bg-slate-100 hover:text-indigo-600 transition-colors group min-w-[150px]">Company Name <span id="sort-name" class="ml-1 text-indigo-400"></span></th>
+                                    <th onclick="handleSort('funds')" class="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 cursor-pointer hover:bg-slate-100 hover:text-indigo-600 transition-colors group">Funds Holding <span id="sort-funds" class="ml-1 text-indigo-400"></span></th>
+                                    <th onclick="handleSort('price')" class="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right cursor-pointer hover:bg-slate-100 hover:text-indigo-600 transition-colors group">Current Price <span id="sort-price" class="ml-1 text-indigo-400"></span></th>
+                                    <th onclick="handleSort('adv')" class="p-3 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right cursor-pointer hover:bg-slate-100 hover:text-indigo-600 transition-colors group">90-Day ADV <span id="sort-adv" class="ml-1 text-indigo-400"></span></th>
+                                    <th onclick="handleSort('shockShares')" class="p-3 text-xs font-bold text-indigo-600 uppercase tracking-wider border-b border-indigo-100 text-right bg-indigo-50/50 cursor-pointer hover:bg-indigo-50 hover:text-indigo-800 transition-colors group">Shock Shares <span id="sort-shockShares" class="ml-1 text-indigo-500"></span></th>
+                                    <th onclick="handleSort('dtl')" class="p-3 text-xs font-black text-rose-600 uppercase tracking-wider border-b border-rose-100 text-right bg-rose-50/50 cursor-pointer hover:bg-rose-50 hover:text-rose-800 transition-colors group">Days to Liquidate <span id="sort-dtl" class="ml-1 text-rose-500">↓</span></th>
+                                    <th onclick="handleSort('impact')" class="p-3 pr-6 text-xs font-black text-rose-600 uppercase tracking-wider border-b border-rose-100 text-right bg-rose-50/50 cursor-pointer hover:bg-rose-50 hover:text-rose-800 transition-colors group">Est. Price Impact <span id="sort-impact" class="ml-1 text-rose-500"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody" class="divide-y divide-slate-100">
+                                <!-- Rows injected via JS -->
+                                <tr><td colspan="7" class="p-8 text-center text-slate-400 font-medium">Loading quantitative metrics...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </div>
-
     </div>
 
     <script>
@@ -126,6 +158,7 @@
         // Sorting and Filtering State
         let currentSortCol = 'dtl';
         let sortAscending = false;
+        let riskChart = null; // NEW: Chart.js instance
 
         // UI Elements
         const aumSlider = document.getElementById('aumSlider');
@@ -139,6 +172,7 @@
         
         const searchInput = document.getElementById('searchInput');
         const riskFilter = document.getElementById('riskFilter');
+        const companyList = document.getElementById('companyList'); // NEW: Datalist element
 
         // Load the enriched CSV
         Papa.parse("../Database/liquidity_risk_report.csv", {
@@ -148,6 +182,14 @@
             complete: function(results) {
                 // Filter out rows that failed to get live data
                 stockData = results.data.filter(row => row['Current Price (INR)'] && row['90-Day ADV (Shares)']);
+                
+                // NEW: Populate the Search Autocomplete Datalist
+                stockData.forEach(stock => {
+                    const option = document.createElement('option');
+                    option.value = stock['Company Name'];
+                    companyList.appendChild(option);
+                });
+
                 calculateRisk();
             },
             error: function(err) {
@@ -254,6 +296,60 @@
 
             // 5. Render the final table
             renderTable(data);
+            
+            // 6. Render the new Chart
+            updateChart(data);
+        }
+
+        // NEW: Function to render the Top 10 Risk Chart
+        function updateChart(data) {
+            // Get the top 10 stocks by Days to Liquidate
+            const top10 = [...data].sort((a, b) => b.dtl - a.dtl).slice(0, 10);
+            
+            const labels = top10.map(d => d.name);
+            const dtlValues = top10.map(d => d.dtl);
+            
+            // Dynamic colors based on risk
+            const colors = dtlValues.map(dtl => dtl > 7 ? 'rgba(225, 29, 72, 0.85)' : (dtl > 3 ? 'rgba(245, 158, 11, 0.85)' : 'rgba(79, 70, 229, 0.85)'));
+
+            if (riskChart) {
+                riskChart.data.labels = labels;
+                riskChart.data.datasets[0].data = dtlValues;
+                riskChart.data.datasets[0].backgroundColor = colors;
+                riskChart.update();
+            } else {
+                const ctx = document.getElementById('riskChart').getContext('2d');
+                riskChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Days to Liquidate',
+                            data: dtlValues,
+                            backgroundColor: colors,
+                            borderRadius: 4,
+                            barPercentage: 0.7
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', // Makes the bar chart horizontal
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => `${context.parsed.x.toFixed(1)} Days`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { title: { display: true, text: 'Days to Liquidate', font: {weight: 'bold'} } },
+                            y: { ticks: { autoSkip: false } }
+                        }
+                    }
+                });
+            }
         }
 
         function renderTable(data) {
@@ -290,13 +386,13 @@
                 if(rowBgClass) tr.classList.add(rowBgClass.split(' ')[0]);
 
                 tr.innerHTML = `
-                    <td class="p-4 text-sm font-bold text-slate-800">${row.name}</td>
-                    <td class="p-4 text-sm font-medium text-slate-600"><span class="bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">${row.funds}</span></td>
-                    <td class="p-4 text-sm text-slate-600 text-right">${priceStr}</td>
-                    <td class="p-4 text-sm text-slate-600 text-right">${advStr}</td>
-                    <td class="p-4 text-sm font-semibold text-indigo-700 text-right bg-indigo-50/10">${shockSharesStr}</td>
-                    <td class="p-4 text-sm text-right bg-rose-50/10 ${dtlClass}">${dtlStr} Days</td>
-                    <td class="p-4 text-sm font-bold text-rose-600 text-right bg-rose-50/10">${impactStr}</td>
+                    <td class="p-3 pl-6 text-sm font-bold text-slate-800 whitespace-normal break-words min-w-[150px] max-w-[250px]">${row.name}</td>
+                    <td class="p-3 text-sm font-medium text-slate-600 whitespace-nowrap"><span class="bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">${row.funds}</span></td>
+                    <td class="p-3 text-sm text-slate-600 text-right whitespace-nowrap">${priceStr}</td>
+                    <td class="p-3 text-sm text-slate-600 text-right whitespace-nowrap">${advStr}</td>
+                    <td class="p-3 text-sm font-semibold text-indigo-700 text-right bg-indigo-50/10 whitespace-nowrap">${shockSharesStr}</td>
+                    <td class="p-3 text-sm text-right bg-rose-50/10 ${dtlClass} whitespace-nowrap">${dtlStr} Days</td>
+                    <td class="p-3 pr-6 text-sm font-bold text-rose-600 text-right bg-rose-50/10 whitespace-nowrap">${impactStr}</td>
                 `;
                 tableBody.appendChild(tr);
             });
