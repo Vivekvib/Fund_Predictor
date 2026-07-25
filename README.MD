@@ -1,92 +1,118 @@
-🌊 Systemic Liquidity Contagion & Fund Herding Engine
+# 🌊 Systemic Liquidity Contagion & Fund Herding Engine
 
-📌 The Business Problem
+[![Live Dashboard](https://img.shields.io/badge/Live%20Demo-fund--predictor.vercel.app-blue?style=for-the-badge)](http://fund-predictor.vercel.app/)
+![Python](https://img.shields.io/badge/Python-3.x-3776AB?style=flat&logo=python&logoColor=white)
+![Pandas](https://img.shields.io/badge/Pandas-Data%20Engineering-150458?style=flat&logo=pandas&logoColor=white)
+![Chart.js](https://img.shields.io/badge/Chart.js-Visualization-FF6384?style=flat&logo=chart.js&logoColor=white)
+![Deployment](https://img.shields.io/badge/Deployed%20on-Vercel-000000?style=flat&logo=vercel&logoColor=white)
 
-In the mutual fund space, specifically within Small and Mid-Cap domains, traditional performance metrics often mask underlying structural risks. When multiple funds pile into the same thinly-traded stocks ("herding"), it creates a Systemic Liquidity Contagion Risk. If a macroeconomic shock triggers mass redemptions, funds are forced to liquidate overlapping positions simultaneously. This crushes the underlying stock price, creating a downward spiral that destroys Net Asset Value (NAV) across the board.
+**Live Interactive Dashboard:** [fund-predictor.vercel.app](http://fund-predictor.vercel.app/)
+
+---
+
+## 📌 The Business Problem
+
+In the mutual fund space, specifically within **Small and Mid-Cap** domains, traditional performance metrics often mask underlying structural risks. When multiple funds pile into the same thinly-traded stocks ("herding"), it creates a **Systemic Liquidity Contagion Risk**.
+
+If a macroeconomic shock triggers mass redemptions, funds are forced to liquidate overlapping positions simultaneously. This crushes the underlying stock price, creating a downward spiral that destroys Net Asset Value (NAV) across the board.
 
 This project was built to empirically measure, track, and visualize this hidden liquidity risk and profile the behavioral tendencies of fund managers.
 
-⚙️ The Solution Architecture
+---
 
-This project is divided into a robust Python data-engineering pipeline and an interactive web-based dashboard.
+## ⚙️ The Solution Architecture
 
-Phase 1: Data Engineering & Pipeline (Codes/)
+This project is divided into a robust Python data-engineering pipeline and an interactive web-based dashboard, simulating the workflow of a Quantitative Risk Analyst.
+
+### Phase 1: Data Engineering & Pipeline (`Codes/`)
 
 Processing raw financial disclosures is notoriously messy. The pipeline cleans and structures disparate data:
 
-duplicate_cleaner.py: Uses SHA-256 cryptographic hashing to scan directories and eliminate duplicate portfolio files regardless of file name.
+- **`duplicate_cleaner.py`** — Uses **SHA-256 cryptographic hashing** to scan directories and eliminate duplicate portfolio files regardless of file name.
+- **`fund_consolidator.py`** — Merges disparate portfolio CSVs into a master dataset. Features include:
+  - **Fuzzy String Matching** (`difflib`) to map irregular fund names to a master AUM screener.
+  - **Custom Text Parsing** to bypass corrupted CSV footers and disclaimers that break standard Pandas parsers.
+  - Dynamic calculation of absolute Investment Value (in Crores) based on Asset % and Fund AUM.
+- **`stock_universe_checker.py`** — A cross-sectional analysis tool that strips out non-equity instruments (T-Bills, GOI bonds) and aggregates the exact fund overlap and sector mapping for every stock.
 
-fund_consolidator.py: Merges disparate portfolio CSVs into a master dataset. Features include:
+### Phase 2: Quantitative Risk Engine (`Codes/liquidity_risk_engine.py`)
 
-Fuzzy String Matching (difflib) to map irregular fund names to a master AUM screener.
+Applies rigorous academic and financial models to the raw data using live market feeds:
 
-Custom Text Parsing to bypass corrupted CSV footers and disclaimers that break standard Pandas parsers.
+- **Automated Data Ingestion:** Uses a heuristic string-matching algorithm to map fund holdings to `.NS` (National Stock Exchange) tickers, querying the `yfinance` API for 90 days of historical market data.
+  > *Note: A heuristic mapper with an override dictionary was built for this POC. In a production environment, this would integrate with an institutional ISIN master feed like Bloomberg/Refinitiv.*
+- **Days to Liquidate (DTL):** Calculates how many days a fund needs to exit a position based on Average Daily Volume (ADV) and participation caps.
+- **Amihud Market Impact Measure:** Estimates the exact percentage the stock price will drop, predicting real-world slippage during a redemption shock.
 
-Dynamic calculation of absolute Investment Value (in Crores) based on Asset % and Fund AUM.
-
-stock_universe_checker.py: A cross-sectional analysis tool that strips out non-equity instruments (T-Bills, GOI bonds) and aggregates the exact fund overlap and sector mapping for every stock.
-
-Phase 2: Quantitative Risk Engine (Upcoming)
-
-To be integrated: Applying rigorous academic and financial models to the raw data:
-
-Days to Liquidate (DTL): Calculating how many days a fund needs to exit a position based on Average Daily Volume (ADV).
-
-Amihud Market Impact Measure: Estimating the exact percentage the stock price will drop predicting real-world slippage during a redemption shock.
-
-Phase 3: Interactive Dashboard (fund_overlap_dashboard.html)
+### Phase 3: Interactive Dashboard
 
 A front-end visualization tool designed for Portfolio Managers and Risk Officers.
 
-Dynamic Overlap Matrix: Visualizes which stocks are the most "crowded" trades in the industry using dynamic linear gradients.
+- **Fund Overlap Map** (`fund_overlap_dashboard.html`): Visualizes which stocks are the most "crowded" trades in the industry using dynamic linear gradients. Features behavioral profiling to grade fund managers (identifying "Herd Followers" vs. "Contrarians").
+- **Liquidity Stress Test** (`stress_test_dashboard.html`): An interactive command center. Users can adjust fund AUM, allocation percentages, and shock severity to simulate a market crash and instantly see the resulting DTL and Price Impact on the most vulnerable stocks.
 
-Behavioral Profiling: The JavaScript engine reverse-engineers the dataset to grade fund managers:
+---
 
-🐑 The Herd Follower: The fund with the highest average stock overlap (buying what everyone else buys).
+## 🛠️ Tech Stack
 
-🦅 The Contrarian: The fund with the lowest average overlap (avoiding crowded trades).
+| Layer | Technologies |
+|---|---|
+| **Data Processing** | Python, Pandas, NumPy, Hashlib, Difflib, yfinance |
+| **Front-End Visualization** | HTML5, JavaScript, TailwindCSS, Chart.js, PapaParse |
+| **Deployment** | Vercel |
 
-💎 Unique Bets: Tracks funds holding "orphaned" stocks that no other fund holds.
+---
 
-🛠️ Tech Stack
+## 🚀 How to Run Locally
 
-Data Processing: Python, Pandas, NumPy, Hashlib, Difflib.
+1. Clone the repository.
 
-Front-End Visualization: HTML5, JavaScript, TailwindCSS, Chart.js, PapaParse.
+2. Ensure you have the required Python libraries installed:
+   ```bash
+   pip install pandas openpyxl yfinance
+   ```
 
-🚀 How to Run Locally
+3. Maintain the following folder structure:
 
-Clone the repository.
+   ```
+   FUND PREDICTOR/
+   ├── index.html (Vercel Redirect)
+   ├── Codes/
+   │   ├── duplicate_cleaner.py
+   │   ├── fund_consolidator.py
+   │   ├── stock_universe_checker.py
+   │   ├── liquidity_risk_engine.py
+   │   ├── fund_overlap_dashboard.html
+   │   └── stress_test_dashboard.html
+   └── Database/
+       ├── Small Cap Funds/ (Place raw CSVs here)
+       ├── screener.csv
+       ├── Master Consolidated Funds.xlsx
+       ├── stock_overlap_report.csv
+       └── liquidity_risk_report.csv
+   ```
 
-Ensure you have the required Python libraries installed: pip install pandas openpyxl
+4. Navigate to the `Codes` folder and run the Python pipeline in order:
 
-Maintain the following folder structure:
+   ```bash
+   cd Codes
+   python duplicate_cleaner.py
+   python fund_consolidator.py
+   python stock_universe_checker.py
+   python liquidity_risk_engine.py
+   ```
 
-FUND_PREDICTOR/
-├── Codes/
-│   ├── duplicate_cleaner.py
-│   ├── fund_consolidator.py
-│   ├── stock_universe_checker.py
-│   └── fund_overlap_dashboard.html
-└── Database/
-    ├── Small_Cap_Funds/ (Place raw CSVs here)
-    ├── screener.csv
-    └── Master_Consolidated_Funds.xlsx
+5. Open `Codes/fund_overlap_dashboard.html` using a local server (e.g., VS Code "Live Server" extension) to explore the interactive visualizations locally.
 
+---
 
-Navigate to the Codes folder and run the Python pipeline in order:
+## 📈 Future Scope
 
-python duplicate_cleaner.py
-python fund_consolidator.py
-python stock_universe_checker.py
+- **Liquidity-Adjusted VaR (L-VaR):** Upgrading standard Value at Risk models to penalize illiquid portfolios.
+- **Live Automated Scheduling:** Setting up a CRON job or AWS Lambda function to run the Python pipeline daily and update the Vercel deployment automatically.
 
+---
 
-Open fund_overlap_dashboard.html using a local server (e.g., VS Code "Live Server" extension) to explore the interactive visualizations.
+## 🔗 Live Demo
 
-Open this url to see the Dashboard: [https://fund-predictor-git-main-vivek-nishads-projects.vercel.app/](http://fund-predictor.vercel.app/)
-
-📈 Future Scope
-
-Liquidity-Adjusted VaR (L-VaR): Upgrading standard Value at Risk models to penalize illiquid portfolios.
-
-Live Market Integration: Pulling live 90-day ADV and price data via the yfinance API to simulate real-time liquidity shocks.
+👉 **[fund-predictor.vercel.app](http://fund-predictor.vercel.app/)**
